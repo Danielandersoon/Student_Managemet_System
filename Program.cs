@@ -8,6 +8,9 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.IO;
 
 namespace Student_Managemet_System
 {
@@ -15,28 +18,46 @@ namespace Student_Managemet_System
         //
         // attributes
         //
-        private bool b_Passed;
-        private string s_StudentID;
-        private List<List<int>> i_StudentScores = new List<List<int>>();
-        private string s_Name;
+        public string s_Name { get; set; }
+        public string s_StudentID { get; set; }
+        public List<List<int>> i_StudentScores { get; set; }
+        public bool b_Passed { get; set; }
 
         //
         // Methods
         //
-        public void generateNew()
+        public void generateNew(ref List<StudentRecord> studentRecords)
         {
             Random rnd = new Random(); // Random class may not be ideal as it has a set number of rndnum tables
 
-            s_StudentID = "";
-            // Make new student id 8 charachters long 
-            for (int x = 0; x < 8; x++)
+
+            int iNumberofLoops = 1;
+            for (int i = 0; i < iNumberofLoops; i++)
             {
-                s_StudentID = s_StudentID + rnd.Next(9);
+                s_StudentID = "";
+                // Make new student id 8 charachters long 
+                for (int x = 0; x < 8; x++)
+                {
+                    s_StudentID = s_StudentID + rnd.Next(9);
+                }
+
+                // Itterate through array of all existing studentRecords looking for one that is the same as the new one
+                // if it does already exist increase number of loops until its not the same
+                for (int y = 0; y < studentRecords.Count; y++)
+                {
+                    if (studentRecords[y].getStudentID() == s_StudentID)
+                    {
+                        iNumberofLoops++;
+                        break;
+                    }
+                }
             }
 
             // Set student name 
             Console.Write("Please input students name: ");
             setName(Console.ReadLine());
+
+            i_StudentScores = new List<List<int>>();
         }
         //
         // Getters
@@ -94,7 +115,7 @@ namespace Student_Managemet_System
             }   
         }
 
-        public StudentRecord Run() {
+        public StudentRecord Run(ref List<StudentRecord> studentRecords) {
             // Creates new instance of StudentRecord class
             StudentRecord record = new StudentRecord();
 
@@ -102,7 +123,7 @@ namespace Student_Managemet_System
             while (!bAuthorized) // Just stops the program moving on without validation
             {
                 // call the generateNew method which does as it will
-                record.generateNew();
+                record.generateNew(ref studentRecords);
 
                 Console.Write("\nStudentID:    " + record.getStudentID() +
                               "\nStudent Name: " + record.getName() +
@@ -279,12 +300,15 @@ namespace Student_Managemet_System
             List<List<int>> iScores = studentRecord[i_SelectedStudent].getStudentScores();
 
             int iLengthOfFirstDimension = iScores.Count - 1;
-            int iLengthOfSecondDimension = iScores[iLengthOfFirstDimension].Count - 1;
-
-            // itterate through the new set of scores and write to console
-            for (int x = 0; x < iLengthOfSecondDimension + 1; x++)
+            if ((iLengthOfFirstDimension + 1) != 0)
             {
-                Console.WriteLine("score No. " + (x + 1) + ") " + iScores[iLengthOfFirstDimension][x]);
+                int iLengthOfSecondDimension = iScores[iLengthOfFirstDimension].Count - 1;
+
+                // itterate through the new set of scores and write to console
+                for (int x = 0; x < iLengthOfSecondDimension + 1; x++)
+                {
+                    Console.WriteLine("score No. " + (x + 1) + ") " + iScores[iLengthOfFirstDimension][x]);
+                }
             }
 
             // Checks if the student is passing then prints accordingly
@@ -402,13 +426,28 @@ namespace Student_Managemet_System
         //
         private bool b_Quit = false;
         private int i_Selection;
+        private const string c_s_SaveFileName = "StudentRecords.json";
         private List<StudentRecord> _studentRecords = new List<StudentRecord>();
-        MainMenu menu;
+        private List<string> s_StudentRecordJsons = new List<string>();
+        private MainMenu menu;
 
         //
         // Methods
         //
-        public Application() { 
+        public Application() {
+
+            // Load the csv and break it into individual json strings
+            // File may not exist so try to load it and if not possible then crate it
+            if (File.Exists(c_s_SaveFileName))
+            {
+                string sJsonRead = File.ReadAllText(c_s_SaveFileName);
+                _studentRecords = JsonSerializer.Deserialize<List<StudentRecord>>(sJsonRead);
+            }
+            else  
+            {
+                FileStream file = File.Create(c_s_SaveFileName);
+                file.Close();
+            }
 
             // Create an instance of the main menu
             menu = new MainMenu(); 
@@ -424,7 +463,7 @@ namespace Student_Managemet_System
                         CreateNewStudent createNewStudent = new CreateNewStudent();
                         
                         // createNewStudent.Run creates a new StudentRecord which we ammend the array of student records with
-                        _studentRecords.Add(createNewStudent.Run());
+                        _studentRecords.Add(createNewStudent.Run(ref _studentRecords));
                         break;
                     }
                 case 2:
@@ -447,6 +486,10 @@ namespace Student_Managemet_System
                     }
                 case 5:
                     {
+                        // Make a string storing a Json and write this to a .JSON file
+                        // After set quit to true which breaks the application loop
+                        string sJsonString = JsonSerializer.Serialize<List<StudentRecord>>(_studentRecords);
+                        File.WriteAllText(c_s_SaveFileName, sJsonString);
                         b_Quit = true;
                         break;
                     }
@@ -457,9 +500,9 @@ namespace Student_Managemet_System
             }
         }
 
-
         public void Run()
         {
+
             while (!b_Quit)
             {
                 // Take user input and convert to int
