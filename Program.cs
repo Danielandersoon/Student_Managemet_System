@@ -309,15 +309,15 @@ namespace Student_Managemet_System
                 {
                     Console.WriteLine("score No. " + (x + 1) + ") " + iScores[iLengthOfFirstDimension][x]);
                 }
+
+
+                // Checks if the student is passing then prints accordingly
+                Console.WriteLine();
+                if (studentRecord[i_SelectedStudent].getPassed())
+                    Console.WriteLine("Passing\n");
+                else
+                    Console.WriteLine("Failling\n");
             }
-
-            // Checks if the student is passing then prints accordingly
-            Console.WriteLine();
-            if (studentRecord[i_SelectedStudent].getPassed())
-                Console.WriteLine("Passing\n");
-            else
-                Console.WriteLine("Failling\n");
-
         }
 
         // Just uses getters from the studentRecord class to output the basic identifiers for the student
@@ -362,7 +362,7 @@ namespace Student_Managemet_System
                               "2) Enter marks for student\n" +
                               "3) Update studnets mark\n" +
                               "4) Show student record\n" +
-                              "5) Save + Quit program\n");
+                              "5) Quit program\n");
         }
 
         private bool takeInput(ConsoleKeyInfo keyIn)
@@ -430,6 +430,10 @@ namespace Student_Managemet_System
         private List<StudentRecord> _studentRecords = new List<StudentRecord>();
         private List<string> s_StudentRecordJsons = new List<string>();
         private MainMenu menu;
+        private CreateNewStudent _createNewStudent;
+        private CreateNewStudentScores _createNewStudentScores;
+        private UpdateScores _updateScores;
+        ViewStudentsRecords _viewStudentsRecords;
 
         //
         // Methods
@@ -460,36 +464,50 @@ namespace Student_Managemet_System
             {
                 case 1:
                     {
-                        CreateNewStudent createNewStudent = new CreateNewStudent();
+                        _createNewStudent = new CreateNewStudent();
                         
                         // createNewStudent.Run creates a new StudentRecord which we ammend the array of student records with
-                        _studentRecords.Add(createNewStudent.Run(ref _studentRecords));
+                        _studentRecords.Add(_createNewStudent.Run(ref _studentRecords));
+
+                        // Make a string storing a Json and write this to a .JSON file
+                        string sJsonString = JsonSerializer.Serialize<List<StudentRecord>>(_studentRecords);
+                        File.WriteAllText(c_s_SaveFileName, sJsonString);
                         break;
                     }
                 case 2:
                     {
                         // Create NewStudentScores creates a 2d aray of student scores
-                        CreateNewStudentScores createNewStudentScores = new CreateNewStudentScores(ref _studentRecords);
+                        _createNewStudentScores = new CreateNewStudentScores(ref _studentRecords);
+
+                        // Make a string storing a Json and write this to a .JSON file
+                        string sJsonString = JsonSerializer.Serialize<List<StudentRecord>>(_studentRecords);
+                        File.WriteAllText(c_s_SaveFileName, sJsonString);
                         break;
                     }
                 case 3:
                     {
                         // Create NewStudentScores ammends the 2d aray of student scores
-                        UpdateScores updateScores = new UpdateScores(ref _studentRecords);
+                        _updateScores = new UpdateScores(ref _studentRecords);
+
+                        // Make a string storing a Json and write this to a .JSON file
+                        string sJsonString = JsonSerializer.Serialize<List<StudentRecord>>(_studentRecords);
+                        File.WriteAllText(c_s_SaveFileName, sJsonString);
                         break;
                     }
                 case 4: 
                     {
                         // Create ViewStudentRecords instance to output details about the selected student
-                        ViewStudentsRecords viewStudentsRecords = new ViewStudentsRecords(ref _studentRecords);
+                        _viewStudentsRecords = new ViewStudentsRecords(ref _studentRecords);
+
+                        // Make a string storing a Json and write this to a .JSON file
+                        string sJsonString = JsonSerializer.Serialize<List<StudentRecord>>(_studentRecords);
+                        File.WriteAllText(c_s_SaveFileName, sJsonString);
                         break;
                     }
                 case 5:
                     {
-                        // Make a string storing a Json and write this to a .JSON file
                         // After set quit to true which breaks the application loop
-                        string sJsonString = JsonSerializer.Serialize<List<StudentRecord>>(_studentRecords);
-                        File.WriteAllText(c_s_SaveFileName, sJsonString);
+
                         b_Quit = true;
                         break;
                     }
